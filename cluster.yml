@@ -1,13 +1,20 @@
 - hosts: all
   roles:
-    - common
-    - kubeadm
+    - role: common
+      tags: ['prepare']
+    - role: kubeadm
+      tags: ['prepare', 'setup']
 
 - hosts: master
+  vars_files:
+    - vars/secrets.yml
   roles:
-    - master
-#    - dashboard
+    - role: master
+      tags: ['join']
+    - role: dashboard
+      tags: ['install']
 
 - hosts: all:!master
   roles:
-    - workers
+    - role: workers
+      tags: ['join']

@@ -1,3 +1,4 @@
 .log/*
 .cache/*
 .cp/*
+group_vars/secrets.yaml

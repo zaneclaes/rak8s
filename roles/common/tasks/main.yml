@@ -14,10 +14,10 @@
   register: hostname
   tags: hostname
 
-- name: set timezone to UTC
-  timezone:
-    name: UTC
-  register: timezone
+# - name: set timezone to UTC
+#   timezone:
+#     name: UTC
+#   register: timezone
 
 # - name: gpu mem check
 #   shell: cat /boot/config.txt | grep gpu_mem
@@ -68,7 +68,7 @@
 - name: Wait for Reboot
   local_action: wait_for
   args:
-    host: "{{ inventory_hostname }}"
+    host: "{{ ansible_default_ipv4.address }}"
     port: 22
     delay: 15
     timeout: 120
