@@ -3,11 +3,31 @@
 - name: Reset Kubernetes
   shell: kubeadm reset -f
   register: kubeadm_reset
+  tags:
+  - reset
+
+- name: check if already in a cluster
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  when: kubeadm_reset is not defined or kubeadm_reset is succeeded
+  register: cluster_conf
+  tags:
+  - join
 
 - name: Join Kubernetes Cluster
   shell: kubeadm join --ignore-preflight-errors=all --token {{ token }} {{ groups['master'][0] }}:6443 --discovery-token-unsafe-skip-ca-verification
-  when: kubeadm_reset is succeeded
+  when: cluster_conf.stat.exists == False
   register: kubeadm_join
+  tags:
+  - join
+
+- name: Apply node labels
+  shell: "kubeadm label nodes {{ ansible_hostname }} {{ item }} --overwrite"
+  when: node_labels is defined
+  with_items: "{{ node_labels }}"
+  tags:
+  - join
+  - label
 
 - name: Poke kubelet
   systemd:

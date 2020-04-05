@@ -1,0 +1,39 @@
+---
+# NFS Tasks
+# https://www.raspberrypi.org/documentation/configuration/nfs.md
+
+- name: Mount NFS drive via fstab
+  when: nfs.drive is defined and nfs.drive != ""
+  lineinfile:
+    dest: /etc/fstab
+    regexp: "^{{ nfs.drive }} .+$"
+    line: "{{ nfs.drive }}    {{ nfs.directory }}   auto  defaults,noatime,nofail  0  0"
+  register: mount
+
+- name: Re-mount fstab
+  when: mount|bool
+  shell: 'mount -a'
+
+- name: Install NFS Server
+  apt:
+    name: nfs-kernel-server
+    state: latest
+
+- name: Create NFS directory
+  file:
+    path: "{{ nfs.directory }}"
+    state: directory
+    owner: "nobody"
+    group: "nogroup"
+    mode: 0777
+
+- name: Ensure NFS in /etc/exports
+  lineinfile:
+    dest: /etc/exports
+    regexp: "^{{ nfs.directory }}.+$"
+    line: "{{ nfs.directory }} {{ advertise_address|default(ansible_default_ipv4.address) }}/24({{ nfs.options }})"
+  register: hostname
+  tags: hostname
+
+- name: Apply NFS changes
+  shell: 'exportfs -a && systemctl restart nfs-kernel-server'

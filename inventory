@@ -1,5 +1,13 @@
 [cabin]
-router       ansible_host=192.168.0.1
+router       ansible_host=192.168.0.1 advertise_address=192.168.0.1
+boiler-room  ansible_host=192.168.0.101
+
+[nfs]
+router
+
+[rpi]
+router
+boiler-room
 
 [master]
 router

@@ -387,9 +387,9 @@ do_install() {
 					set -x
 				fi
 				if [ -n "$cli_pkg_version" ]; then
-					$sh_c "apt-get install -y -qq --no-install-recommends docker-ce-cli=$cli_pkg_version >/dev/null"
+					$sh_c "apt-get install -y -qq --no-install-recommends docker-ce-cli=$cli_pkg_version > docker-ce-cli.txt"
 				fi
-				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version >/dev/null"
+				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version > docker-ce.txt"
 			)
 			echo_docker_as_nonroot
 			exit 0
