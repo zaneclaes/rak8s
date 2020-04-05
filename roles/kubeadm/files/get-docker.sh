@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
-
+# Docker CE for Linux installation script
+#
+# See https://docs.docker.com/install/ for the installation steps.
+#
 # This script is meant for quick & easy install via:
 #   $ curl -fsSL https://get.docker.com -o get-docker.sh
 #   $ sh get-docker.sh
@@ -16,7 +19,7 @@ set -e
 #
 # Git commit from https://github.com/docker/docker-install when
 # the script was uploaded (Should only be modified by upload job):
-SCRIPT_COMMIT_SHA="f45d7c11389849ff46a6b4d94e0dd1ffebca32c1"
+SCRIPT_COMMIT_SHA="442e66405c304fa92af8aadaa1d9b31bf4b0ad94"
 
 
 # The channel to install from:
@@ -384,9 +387,9 @@ do_install() {
 					set -x
 				fi
 				if [ -n "$cli_pkg_version" ]; then
-					$sh_c "apt-get install -y -qq --no-install-recommends docker-ce-cli=$cli_pkg_version >/dev/null"
+					$sh_c "apt-get install -y -qq --no-install-recommends docker-ce-cli=$cli_pkg_version > docker-ce-cli.txt"
 				fi
-				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version >/dev/null"
+				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version > docker-ce.txt"
 			)
 			echo_docker_as_nonroot
 			exit 0
@@ -474,4 +477,3 @@ do_install() {
 # wrapped up in a function so that we have some protection against only getting
 # half the file during "curl | sh"
 do_install
-

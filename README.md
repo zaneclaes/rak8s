@@ -58,7 +58,7 @@ git clone https://github.com/rak8s/rak8s.git
 
 Modify the `inventory` file to suit your environment. Change the names to your liking and the IPs to the addresses of your Raspberry Pis.
 
-If your SSH user on the Raspberry Pis are not the Raspbian default `pi` user modify `remote_user` in the `ansible.cfg`.
+If your SSH user on the Raspberry Pis are not the Raspbian default `pi` user modify `remote_user` in the `ansible.cfg`. If different hosts have different usernames, use the `ansible_remote_user=username` setting in the `inventory`.
 
 ### Confirm Ansible is working with your Raspberry Pis:
 

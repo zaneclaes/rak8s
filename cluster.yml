@@ -1,13 +1,29 @@
 - hosts: all
   roles:
-    - common
-    - kubeadm
+    - role: common
+      tags: ['install']
+    - role: kubeadm
+      tags: ['install']
 
 - hosts: master
+  vars_files:
+    - vars/secrets.yml
   roles:
-    - master
-#    - dashboard
+    - role: master
+      tags: ['reset', 'create']
+    - role: dashboard
+      tags: ['create']
+
+- hosts: nfs
+  vars_files:
+      - vars/nfs.yml
+  roles:
+    - role: nfs
+      tags: ['create']
 
 - hosts: all:!master
+  vars_files:
+    - vars/secrets.yml
   roles:
-    - workers
+    - role: workers
+      tags: ['join', 'create']

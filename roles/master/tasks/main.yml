@@ -1,40 +1,62 @@
 ---
 # tasks file for master
+
+- name: Create Kubernetes config directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ ansible_ssh_user }}"
+    group: "{{ ansible_ssh_user }}"
+    mode: 0755
+  with_items:
+    - "/root/.kube"
+    - "/home/{{ ansible_ssh_user }}/.kube"
+
 - name: Reset Kubernetes Master
   shell: kubeadm reset -f
   register: kubeadm_reset
+  tags:
+  - reset
 
-- name: "Initialize Master {{ kubernetes_version }}"
-  shell: kubeadm init --apiserver-advertise-address={{ ansible_default_ipv4.address }} --token={{ token }} --kubernetes-version={{ kubernetes_version }} --pod-network-cidr={{ podnet }}
+- name: "Initialize Master v{{ kubernetes_version }} @{{ advertise_address|default(ansible_default_ipv4.address) }}"
+  shell: "kubeadm init --apiserver-advertise-address={{ advertise_address|default(ansible_default_ipv4.address) }} --upload-certs --token={{ token }} --kubernetes-version=v{{ kubernetes_version }} --pod-network-cidr={{ podnet }}"
   register: kubeadm_init
   when: kubeadm_reset is succeeded
-
-- name: Create Kubernetes config directory
-  file:
-    path: /root/.kube/
-    state: directory
-    owner: root
-    group: root
-    mode: 0755
 
 - name: Copy admin.conf to config directory
   copy:
     src: /etc/kubernetes/admin.conf
-    dest: /root/.kube/config
-    owner: root
-    group: root
+    dest: "{{ item }}"
+    owner: "{{ ansible_ssh_user }}"
+    group: "{{ ansible_ssh_user }}"
     mode: 0755
+    force: yes
     remote_src: yes
     backup: yes
-  when: kubeadm_init
+  with_items:
+    - "/root/.kube/config"
+    - "/home/{{ ansible_ssh_user }}/.kube/config"
+    - "/home/{{ ansible_ssh_user }}/.kube/{{ group_names | first }}.conf"
+  register: kubeadm_conf
 
-- name: Join Kubernetes Cluster
-  shell: kubeadm join --ignore-preflight-errors=all --token {{ token }} {{ groups['master'][0] }}:6443 --discovery-token-unsafe-skip-ca-verification
-  when: kubeadm_reset is succeeded
-  register: kubeadm_join
+- name: Rename cluster to {{ group_names | first }}
+  replace:
+    path: "/home/{{ ansible_ssh_user }}/.kube/{{ group_names | first }}.conf"
+    regexp: 'kubernetes'
+    replace: "{{ group_names | first }}"
+
+- name: Fetch ~/.kube/{{ group_names | first }}.conf
+  fetch:
+    src: "/home/{{ ansible_ssh_user }}/.kube/{{ group_names | first }}.conf"
+    flat: true
+    force: yes
+    dest: "~/.kube/{{ group_names | first }}.conf"
+
+- name: Remove prior flannel interface
+  shell: "if (ip link | grep flannel.1); then ip link delete flannel.1; fi"
 
 - name: Install Flannel (Networking)
-  shell: "curl -sSL https://rawgit.com/coreos/flannel/{{ flannel_version }}/Documentation/kube-flannel.yml | kubectl create -f -" 
+  command: "kubectl apply -f https://rawgit.com/coreos/flannel/{{ flannel_version }}/Documentation/kube-flannel.yml"
 
 - name: Poke kubelet
   systemd:

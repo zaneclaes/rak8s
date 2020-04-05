@@ -1,0 +1,4 @@
+nfs:
+  directory: "/mnt/k8s-nfs" # The directory to mount for NFS. It will be created if missing.
+  drive: "" # The drive to mount at the directory. Leave blank to ignore.
+  options: "rw,sync,no_subtree_check" # https://linux.die.net/man/5/exports

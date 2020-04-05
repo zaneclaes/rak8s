@@ -9,15 +9,16 @@
 - name: Ensure hostname is in /etc/hosts
   lineinfile:
     dest: /etc/hosts
-    regexp: "^{{ ansible_default_ipv4.address }}.+$"
-    line: "{{ ansible_default_ipv4.address }} {{ ansible_fqdn }} {{ ansible_hostname }}"
+    regexp: "^{{ advertise_address|default(ansible_default_ipv4.address) }}.+$"
+    line: "{{ advertise_address|default(ansible_default_ipv4.address) }} {{ ansible_fqdn }} {{ ansible_hostname }}"
   register: hostname
   tags: hostname
 
-- name: set timezone to UTC
+- name: set timezone to {{ timezone }}
   timezone:
-    name: UTC
-  register: timezone
+    name: "{{ timezone }}"
+  when: timezone is defined
+  register: tz
 
 # - name: gpu mem check
 #   shell: cat /boot/config.txt | grep gpu_mem
@@ -38,12 +39,14 @@
     owner: root
     group: root
     mode: 0755
+  when: ansible_lsb.id == "Raspbian" # https://github.com/debops/debops-tools/issues/187
   register: cmdline
   tags:
     - boot
 
 - name: apt-get update
   apt:
+    force_apt_get: yes # https://github.com/ansible/ansible/issues/56832
     update_cache: yes
     autoclean: yes
     autoremove: yes
@@ -51,6 +54,7 @@
 
 - name: apt-get upgrade
   apt:
+    force_apt_get: yes # https://github.com/ansible/ansible/issues/56832
     upgrade: full
 
 - name: python-apt dependency
@@ -63,13 +67,15 @@
   async: 1
   poll: 0
   ignore_errors: True
-  when: cmdline or timezone or hostname is changed
+  register: reboot
+  when: hostname is changed or (tz is defined and tz is changed) or (cmdline is defined and cmdline is changed)
 
 - name: Wait for Reboot
   local_action: wait_for
   args:
-    host: "{{ inventory_hostname }}"
+    host: "{{ ansible_default_ipv4.address }}"
     port: 22
     delay: 15
     timeout: 120
   become: False
+  when: hostname is changed or (tz is defined and tz is changed) or (cmdline is defined and cmdline is changed)
